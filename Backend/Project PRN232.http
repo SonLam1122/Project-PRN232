@@ -1,0 +1,154 @@
+@Project_PRN232_HostAddress = http://localhost:5135
+
+### 1. Dang nhap tai khoan Admin de lay JWT Token
+# @name loginAdmin
+POST {{Project_PRN232_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "Admin@123456"
+}
+
+### Luu token Admin vao bien
+@adminToken = {{loginAdmin.response.body.token}}
+
+### 2. Dang nhap tai khoan User thuong
+# @name loginUser
+POST {{Project_PRN232_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "user1",
+  "password": "User@123456"
+}
+
+### Luu token User vao bien
+@userToken = {{loginUser.response.body.token}}
+
+### 3. Lay thong tin tai khoan dang dang nhap tu Claims
+GET {{Project_PRN232_HostAddress}}/api/auth/me
+Authorization: Bearer {{adminToken}}
+
+### 4. Doi mat khau nguoi dung (Co xac thuc)
+PUT {{Project_PRN232_HostAddress}}/api/auth/change-password
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "currentPassword": "User@123456",
+  "newPassword": "UserNew@987654"
+}
+
+### 5. Doi lai mat khau mac dinh de phuc vu test
+PUT {{Project_PRN232_HostAddress}}/api/auth/change-password
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "currentPassword": "UserNew@987654",
+  "newPassword": "User@123456"
+}
+
+### 6. Admin lay danh sach tai khoan nguoi dung voi OData
+GET {{Project_PRN232_HostAddress}}/api/users?$orderby=CreatedAt desc
+Authorization: Bearer {{adminToken}}
+
+### 7. Admin xem bao cao thong ke tong hop he thong
+GET {{Project_PRN232_HostAddress}}/api/statistics/summary
+Authorization: Bearer {{adminToken}}
+
+### 8. Lay danh sach the loai sach
+GET {{Project_PRN232_HostAddress}}/api/categories
+
+### 9. Them moi the loai sach (Quyen Admin)
+POST {{Project_PRN232_HostAddress}}/api/categories
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Kinh te & Quan tri",
+  "description": "Sach quan ly doanh nghiep va dau tu tai chinh"
+}
+
+### 10. Admin them moi tac gia (Quyen Admin)
+POST {{Project_PRN232_HostAddress}}/api/authors
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "fullName": "Nguyen Du",
+  "biography": "Dai thi hao dan toc Viet Nam, tac gia Truyen Kieu",
+  "dateOfBirth": "1765-01-03"
+}
+
+### 11. Lay danh sach sach voi OData ($filter, $orderby)
+GET {{Project_PRN232_HostAddress}}/api/books?$filter=contains(tolower(Title), 'hoa')&$orderby=Price desc
+Accept: application/json
+
+### 12. Kiem tra Content Negotiation CSV Formatter
+GET {{Project_PRN232_HostAddress}}/api/books
+Accept: text/csv
+
+### 13. Kiem tra Content Negotiation XML Formatter
+GET {{Project_PRN232_HostAddress}}/api/books/1
+Accept: application/xml
+
+### 14. Them sach moi kem the loai va tac gia (Quyen Admin)
+POST {{Project_PRN232_HostAddress}}/api/books
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "title": "Kien Truc Microservices Chuyen Sau",
+  "isbn": "978-0-123-77788-9",
+  "description": "Kien truc phan mem hien dai voi .NET 8",
+  "price": 280000,
+  "quantity": 10,
+  "authorId": 1,
+  "categoryId": 4,
+  "publishedDate": "2024-03-01"
+}
+
+### 15. Doc gia mượn sách (Borrow Book)
+# @name borrowBookRequest
+POST {{Project_PRN232_HostAddress}}/api/borrowrecords/borrow
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "bookId": 3,
+  "dueDate": "2026-12-01",
+  "notes": "Muon doc phuc vu hoc phan PRN232"
+}
+
+### Luu ma phieu muon
+@borrowRecordId = {{borrowBookRequest.response.body.id}}
+
+### 16. Xem lich su muon sach cua ca nhan
+GET {{Project_PRN232_HostAddress}}/api/borrowrecords/my-history
+Authorization: Bearer {{userToken}}
+
+### 17. Admin xem toan bo phieu muon trong he thong
+GET {{Project_PRN232_HostAddress}}/api/borrowrecords?$filter=Status eq 'Borrowing'
+Authorization: Bearer {{adminToken}}
+
+### 18. Tra sach va tinh phi tre han
+PUT {{Project_PRN232_HostAddress}}/api/borrowrecords/{{borrowRecordId}}/return
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "notes": "Tra sach day du khong hu hong"
+}
+
+### 19. Kiem tra Validate mat khau yeu (Ky vong tra ve HTTP 400 Bad Request)
+POST {{Project_PRN232_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "tester1",
+  "email": "tester1@example.com",
+  "password": "123",
+  "fullName": "Test User"
+}

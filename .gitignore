@@ -1,0 +1,58 @@
+# ==============================================================================
+# TAP TIN CAU HINH LOAI TRU GIT CHO DU AN ASP.NET CORE (.NET 8)
+# ==============================================================================
+
+# Thu muc build va bien dich
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Thu muc va tap tin cau hinh cua Visual Studio
+.vs/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+*.sln.docstates
+
+# Thu muc cau hinh cua Visual Studio Code (giu lai settings chung neu can thiet)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Tap tin tam va bo nho dem cua Rider / JetBrains
+.idea/
+*.sln.iml
+
+# Tap tin thu vien va cache cua NuGet
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.assets.json
+
+# Tap tin co so du lieu cuc bo
+*.mdf
+*.ldf
+*.ndf
+*.db
+*.sqlite
+*.sqlite3
+
+# Tap tin ghi log va ket qua chay he thong
+*.log
+*.tlog
+
+# Tap tin mo rong cua he dieu hanh
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# Tap tin chung chi bao mat va khoa bi mat cuc bo
+*.pfx
+*.p12
+appsettings.*.local.json
+
