@@ -73,8 +73,9 @@
    dotnet run --project Backend
    ```
 2. Mo giao dien Client (Frontend):
-   - Mo truc tiep file `Frontend/index.html` tren trinh duyet (Chrome, Edge)
-   - Hoac su dung Live Server / http-server tai thu muc `Frontend/`
+   - Mo tep `Frontend/index.html` de vao Cong Dieu Huong trung tam
+   - Cổng Độc Giả (Thue va Muon sach): `Frontend/user/index.html`
+   - Cổng Quản Trị Thư Viện: `Frontend/admin/index.html`
 3. Swagger UI:
    - Truy cap: `http://localhost:5135/swagger`
 4. Kiem thu REST Client:

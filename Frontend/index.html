@@ -3,245 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ thống Quản lý Thư viện</title>
+    <title>Hệ Thống Thư Viện</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Hệ thống Quản lý Thư viện</h1>
-            <div class="auth-bar">
-                <span id="userStatus" class="badge badge-guest">Chưa đăng nhập</span>
-                <button id="btnChangePasswordModal" class="btn btn-secondary btn-sm hidden" onclick="toggleChangePasswordCard()">Đổi mật khẩu</button>
-                <button id="btnLogout" class="btn btn-secondary btn-sm hidden" onclick="handleLogout()">Đăng xuất</button>
-            </div>
-        </header>
+    <div class="portal-wrapper">
+        <!-- Tieu de he thong -->
+        <div class="portal-header">
+            <h1>Hệ Thống Quản Lý Thư Viện</h1>
+            <p>Lựa chọn cổng làm việc theo nhu cầu của bạn</p>
+        </div>
 
-        <div id="notification" class="alert hidden"></div>
-
-        <div class="grid">
-            <div>
-                <!-- Khối đăng nhập -->
-                <div id="loginCard" class="card">
-                    <div class="card-title">Đăng nhập tài khoản</div>
-                    <form id="loginForm" onsubmit="handleLogin(event)">
-                        <div class="form-group">
-                            <label>Tên đăng nhập</label>
-                            <input type="text" id="loginUsername" required autocomplete="username">
-                        </div>
-                        <div class="form-group">
-                            <label>Mật khẩu</label>
-                            <input type="password" id="loginPassword" required autocomplete="current-password">
-                        </div>
-                        <button type="submit" class="btn btn-primary" style="width: 100%;">Đăng nhập</button>
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="fillAccount('admin', 'Admin@123456')">Mẫu Admin</button>
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="fillAccount('user1', 'User@123456')">Mẫu User</button>
-                        </div>
-                    </form>
+        <!-- Danh sach hai cong lam viec -->
+        <div class="portal-grid">
+            <!-- Cong danh cho Doc gia / Nguoi dung -->
+            <div class="portal-card">
+                <div>
+                    <h2>Cổng Độc Giả</h2>
+                    <p>Dành cho bạn đọc tra cứu tài liệu, đăng ký thuê sách, mượn sách và theo dõi lịch sử phiếu mượn cá nhân.</p>
+                    <ul>
+                        <li>Tra cứu danh mục sách và lọc theo giá</li>
+                        <li>Đăng ký tài khoản và đăng nhập</li>
+                        <li>Thực hiện yêu cầu mượn và thuê sách</li>
+                        <li>Theo dõi hạn trả và chủ động trả sách</li>
+                    </ul>
                 </div>
-
-                <!-- Khối đổi mật khẩu -->
-                <div id="changePasswordCard" class="card hidden">
-                    <div class="card-title">Đổi mật khẩu tài khoản</div>
-                    <form id="changePasswordForm" onsubmit="handleChangePassword(event)">
-                        <div class="form-group">
-                            <label>Mật khẩu hiện tại</label>
-                            <input type="password" id="currentPassword" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Mật khẩu mới</label>
-                            <input type="password" id="newPassword" required minlength="8">
-                        </div>
-                        <div class="btn-group">
-                            <button type="submit" class="btn btn-primary">Xác nhận</button>
-                            <button type="button" class="btn btn-secondary" onclick="toggleChangePasswordCard()">Đóng</button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Khối mượn sách -->
-                <div class="card">
-                    <div class="card-title">Đăng ký mượn sách</div>
-                    <form id="borrowForm" onsubmit="handleBorrowBook(event)">
-                        <div class="form-group">
-                            <label>Chọn sách</label>
-                            <select id="borrowBookSelect" required>
-                                <option value="">Chọn sách</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Hạn hẹn trả</label>
-                            <input type="date" id="borrowDueDate" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Ghi chú</label>
-                            <input type="text" id="borrowNotes" maxlength="200" placeholder="Mục đích mượn">
-                        </div>
-                        <button type="submit" class="btn btn-success" style="width: 100%;">Mượn sách</button>
-                    </form>
-                </div>
-
-                <!-- Khối thêm và sửa sách -->
-                <div class="card">
-                    <div id="formTitle" class="card-title">Thêm sách mới</div>
-                    <form id="bookForm" onsubmit="handleSaveBook(event)">
-                        <input type="hidden" id="bookId">
-                        
-                        <div class="form-group">
-                            <label>Tiêu đề</label>
-                            <input type="text" id="bookTitle" required maxlength="200">
-                        </div>
-
-                        <div class="form-group">
-                            <label>Mã ISBN</label>
-                            <input type="text" id="bookISBN" required maxlength="20">
-                        </div>
-
-                        <div class="form-group">
-                            <label>Thể loại</label>
-                            <select id="bookCategoryId" required>
-                                <option value="">Chọn thể loại</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Giá</label>
-                            <input type="number" id="bookPrice" step="1000" min="1000" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Số lượng</label>
-                            <input type="number" id="bookQuantity" min="0" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Tác giả</label>
-                            <select id="bookAuthorId" required>
-                                <option value="">Chọn tác giả</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Ngày xuất bản</label>
-                            <input type="date" id="bookPublishedDate" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Mô tả</label>
-                            <textarea id="bookDescription" rows="2" maxlength="500"></textarea>
-                        </div>
-
-                        <div class="btn-group">
-                            <button type="submit" id="btnSaveBook" class="btn btn-primary">Lưu sách</button>
-                            <button type="button" id="btnCancelEdit" class="btn btn-secondary hidden" onclick="resetBookForm()">Hủy</button>
-                        </div>
-                    </form>
-                </div>
+                <a href="user/index.html" class="btn-portal btn-user">Truy cập Cổng Độc Giả</a>
             </div>
 
-            <div>
-                <!-- Thanh chuyển Tab nội dung -->
-                <div class="tabs">
-                    <button class="tab-btn active" id="tabBooksBtn" onclick="switchTab('books')">Danh sách Sách</button>
-                    <button class="tab-btn" id="tabBorrowBtn" onclick="switchTab('borrows')">Phiếu Mượn Trả</button>
-                    <button class="tab-btn" id="tabStatsBtn" onclick="switchTab('stats')">Thống kê Báo cáo</button>
+            <!-- Cong danh cho Quan tri vien Thu vien -->
+            <div class="portal-card">
+                <div>
+                    <h2>Cổng Quản Trị Thư Viện</h2>
+                    <p>Dành cho thủ thư và ban quản trị thực hiện quản lý kho sách, thể loại, tác giả, duyệt mượn trả và xem báo cáo.</p>
+                    <ul>
+                        <li>Quản lý toàn diện kho sách và xuất dữ liệu</li>
+                        <li>Quản lý danh mục thể loại và tác giả</li>
+                        <li>Kiểm duyệt phiếu mượn và thu phạt quá hạn</li>
+                        <li>Thống kê tổng hợp số liệu và phân quyền</li>
+                    </ul>
                 </div>
-
-                <!-- Tab 1: Khối bảng danh sách sách -->
-                <div id="tabBooksSection" class="card">
-                    <div class="toolbar">
-                        <div class="search-box">
-                            <input type="text" id="searchKeyword" placeholder="Tìm theo tiêu đề sách">
-                            <select id="sortOrder" style="width: 170px;">
-                                <option value="">Sắp xếp mặc định</option>
-                                <option value="Price asc">Giá tăng dần</option>
-                                <option value="Price desc">Giá giảm dần</option>
-                                <option value="Title asc">Tiêu đề A đến Z</option>
-                            </select>
-                            <button type="button" class="btn btn-secondary" onclick="loadBooks()">Lọc</button>
-                            <button type="button" class="btn btn-secondary" onclick="resetFilters()">Tải lại</button>
-                        </div>
-                        <div class="content-negotiation-box">
-                            <span>Định dạng</span>
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="fetchContent('application/json')">JSON</button>
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="fetchContent('application/xml')">XML</button>
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="fetchContent('text/csv')">CSV</button>
-                        </div>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Tiêu đề</th>
-                                    <th>ISBN</th>
-                                    <th>Thể loại</th>
-                                    <th>Giá</th>
-                                    <th>Số lượng</th>
-                                    <th>Tác giả</th>
-                                    <th>Thao tác</th>
-                                </tr>
-                            </thead>
-                            <tbody id="booksTableBody">
-                                <tr>
-                                    <td colspan="8" style="text-align: center; color: #64748b;">Đang tải danh sách...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Tab 2: Khối bảng danh sách phiếu mượn trả -->
-                <div id="tabBorrowsSection" class="card hidden">
-                    <div class="toolbar">
-                        <div class="search-box">
-                            <button type="button" class="btn btn-secondary" onclick="loadBorrowRecords()">Tải lại danh sách phiếu</button>
-                        </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Mã phiếu</th>
-                                    <th>Người mượn</th>
-                                    <th>Tên sách</th>
-                                    <th>Ngày mượn</th>
-                                    <th>Hạn trả</th>
-                                    <th>Trạng thái</th>
-                                    <th>Phạt</th>
-                                    <th>Thao tác</th>
-                                </tr>
-                            </thead>
-                            <tbody id="borrowsTableBody">
-                                <tr>
-                                    <td colspan="8" style="text-align: center; color: #64748b;">Đang tải phiếu mượn...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Tab 3: Khối thống kê báo cáo -->
-                <div id="tabStatsSection" class="card hidden">
-                    <div class="toolbar">
-                        <button type="button" class="btn btn-secondary" onclick="loadStatistics()">Làm mới số liệu</button>
-                    </div>
-                    <div id="statsContainer">
-                        <p style="color: #64748b;">Nhấn làm mới số liệu để tải báo cáo thống kê quản trị.</p>
-                    </div>
-                </div>
-
-                <!-- Khối hiển thị dữ liệu phản hồi API và Content Negotiation -->
-                <div class="card">
-                    <div class="card-title">Kết quả phản hồi API</div>
-                    <pre id="apiOutput" class="output-pre">Chưa có yêu cầu nào được thực hiện</pre>
-                </div>
+                <a href="admin/index.html" class="btn-portal btn-admin">Truy cập Cổng Quản Trị</a>
             </div>
         </div>
-    </div>
 
-    <script src="js/app.js"></script>
+        <div class="portal-footer">
+            Dự án môn học PRN232 - Nền tảng ASP.NET Core Web API
+        </div>
+    </div>
 </body>
 </html>

@@ -73,17 +73,25 @@ Project PRN232/
 │   ├── Program.cs           # Pipeline may chu API
 │   ├── Project PRN232.csproj
 │   └── Project PRN232.http  # Kich ban test REST Client
-├── Frontend/                # Giao dien Web Client doc lap
-│   ├── css/
-│   │   └── style.css
-│   ├── js/
-│   │   └── app.js           # AJAX Fetch API (ket noi http://localhost:5135)
-│   └── index.html           # 3 tab: Quan ly Sach, Phieu Muon Tra, Thong ke
+├── Frontend/                # Giao dien Web Client phan tach ro rang
+│   ├── admin/               # Web Quan ly Thu vien (Danh cho Thu thu va Admin)
+│   │   ├── css/style.css    # Giao dien dashboard quan tri
+│   │   ├── js/admin-core.js # Quan tri xac thuc, tabs, thong ke, nguoi dung
+│   │   ├── js/admin-books.js# Quan ly kho sach, the loai, tac gia, muon tra
+│   │   └── index.html       # Giao dien quan ly thu vien
+│   ├── user/                # Web Doc Gia (Thue va Muon sach)
+│   │   ├── css/style.css    # Giao dien doc gia
+│   │   ├── js/user.js       # Tra cuu sach, dat muon, lich su phieu muon
+│   │   └── index.html       # Giao dien thue va muon sach
+│   ├── css/style.css        # Giao dien Cong Dieu Huong
+│   └── index.html           # Cong Dieu Huong trung tam (Portal Hub)
 ├── doc/                     # Tai lieu he thong
 │   ├── api/
 │   │   └── api_specification.md
-│   └── architecture/
-│       └── system_overview.md
+│   ├── architecture/
+│   │   └── system_overview.md
+│   └── user_guide/
+│       └── web_portals_guide.md
 ├── Project PRN232.sln       # Solution Visual Studio
 └── .gitignore               # Cau hinh bo qua tep tam
 

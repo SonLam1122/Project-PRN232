@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Quản Lý Thư Viện</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Thanh tieu de dau trang -->
+        <header>
+            <div>
+                <h1>Hệ Thống Quản Lý Thư Viện</h1>
+            </div>
+            <div class="auth-bar">
+                <span id="userStatus" class="badge badge-guest">Chưa đăng nhập</span>
+                <button id="btnChangePasswordModal" class="btn btn-secondary btn-sm hidden" onclick="toggleChangePasswordCard()">Đổi mật khẩu</button>
+                <button id="btnLogout" class="btn btn-secondary btn-sm hidden" onclick="handleLogout()">Đăng xuất</button>
+                <a href="../user/index.html" class="btn btn-secondary btn-sm">Cổng Độc Giả</a>
+                <a href="../index.html" class="btn btn-secondary btn-sm">Trang chủ</a>
+            </div>
+        </header>
+
+        <!-- Thong bao phan hoi he thong -->
+        <div id="notification" class="alert hidden"></div>
+
+        <!-- Khoi dang nhap quan tri -->
+        <div id="loginCard" class="card">
+            <div class="card-title">Đăng nhập tài khoản quản trị</div>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tên đăng nhập</label>
+                        <input type="text" id="loginUsername" required autocomplete="username">
+                    </div>
+                    <div class="form-group">
+                        <label>Mật khẩu</label>
+                        <input type="password" id="loginPassword" required autocomplete="current-password">
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary">Đăng nhập quản trị</button>
+                    <button type="button" class="btn btn-secondary" onclick="fillAdminAccount()">Mẫu admin</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Khoi doi mat khau -->
+        <div id="changePasswordCard" class="card hidden">
+            <div class="card-title">Đổi mật khẩu tài khoản quản trị</div>
+            <form id="changePasswordForm" onsubmit="handleChangePassword(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Mật khẩu hiện tại</label>
+                        <input type="password" id="currentPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Mật khẩu mới</label>
+                        <input type="password" id="newPassword" required minlength="8">
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary">Xác nhận đổi</button>
+                    <button type="button" class="btn btn-secondary" onclick="toggleChangePasswordCard()">Đóng</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Khu vuc quan tri chinh -->
+        <div id="mainAdminSection" class="hidden">
+            <!-- Thanh chuyen Tab chuc nang quan ly -->
+            <div class="tabs">
+                <button type="button" class="tab-btn active" id="tabBooksBtn" onclick="switchTab('books')">Quản lý Sách</button>
+                <button type="button" class="tab-btn" id="tabBorrowsBtn" onclick="switchTab('borrows')">Quản lý Mượn Trả</button>
+                <button type="button" class="tab-btn" id="tabMetaBtn" onclick="switchTab('meta')">Thể loại và Tác giả</button>
+                <button type="button" class="tab-btn" id="tabStatsBtn" onclick="switchTab('stats')">Thống kê Báo cáo</button>
+                <button type="button" class="tab-btn" id="tabUsersBtn" onclick="switchTab('users')">Quản lý Người dùng</button>
+            </div>
+
+            <!-- Tab 1: Quan ly sach -->
+            <div id="tabBooksSection">
+                <!-- Form them va cap nhat sach -->
+                <div class="card">
+                    <div id="formTitle" class="card-title">Thêm sách mới vào kho</div>
+                    <form id="bookForm" onsubmit="handleSaveBook(event)">
+                        <input type="hidden" id="bookId">
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Tiêu đề sách</label>
+                                <input type="text" id="bookTitle" required maxlength="200">
+                            </div>
+                            <div class="form-group">
+                                <label>Mã ISBN</label>
+                                <input type="text" id="bookISBN" required maxlength="20">
+                            </div>
+                            <div class="form-group">
+                                <label>Thể loại</label>
+                                <select id="bookCategoryId" required>
+                                    <option value="">Chọn thể loại</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Giá sách</label>
+                                <input type="number" id="bookPrice" step="1000" min="1000" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Số lượng tồn kho</label>
+                                <input type="number" id="bookQuantity" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Tác giả</label>
+                                <select id="bookAuthorId" required>
+                                    <option value="">Chọn tác giả</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Ngày xuất bản</label>
+                                <input type="date" id="bookPublishedDate" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Mô tả tóm tắt</label>
+                            <textarea id="bookDescription" rows="2" maxlength="500"></textarea>
+                        </div>
+
+                        <div class="btn-group">
+                            <button type="submit" id="btnSaveBook" class="btn btn-primary">Lưu thông tin sách</button>
+                            <button type="button" id="btnCancelEdit" class="btn btn-secondary hidden" onclick="resetBookForm()">Hủy chỉnh sửa</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Bang danh sach sach va cong cu loc -->
+                <div class="card">
+                    <div class="toolbar">
+                        <div class="search-box">
+                            <input type="text" id="searchKeyword" placeholder="Tìm theo tiêu đề sách">
+                            <select id="sortOrder" style="width: 170px;">
+                                <option value="">Sắp xếp mặc định</option>
+                                <option value="Price asc">Giá tăng dần</option>
+                                <option value="Price desc">Giá giảm dần</option>
+                                <option value="Title asc">Tiêu đề A đến Z</option>
+                            </select>
+                            <button type="button" class="btn btn-primary" onclick="loadBooks()">Tìm kiếm</button>
+                            <button type="button" class="btn btn-secondary" onclick="resetBookFilters()">Tải lại</button>
+                        </div>
+                        <div class="export-box">
+                            <span>Xuất dữ liệu:</span>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="fetchContent('application/json')">JSON</button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="fetchContent('application/xml')">XML</button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="fetchContent('text/csv')">CSV</button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Mã ID</th>
+                                    <th>Tiêu đề</th>
+                                    <th>Mã ISBN</th>
+                                    <th>Thể loại</th>
+                                    <th>Giá</th>
+                                    <th>Tồn kho</th>
+                                    <th>Tác giả</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="booksTableBody">
+                                <tr>
+                                    <td colspan="8" style="text-align: center; color: #64748b;">Đang tải dữ liệu kho sách...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Hop ket qua noi dung Content Negotiation -->
+                <div class="card">
+                    <div class="card-title">Kết quả phản hồi định dạng dữ liệu</div>
+                    <pre id="apiOutput" class="output-pre">Chưa có yêu cầu xuất định dạng nào được thực hiện</pre>
+                </div>
+            </div>
+
+            <!-- Tab 2: Quan ly muon tra -->
+            <div id="tabBorrowsSection" class="card hidden">
+                <div class="toolbar">
+                    <button type="button" class="btn btn-secondary" onclick="loadBorrowRecords()">Làm mới danh sách phiếu mượn</button>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mã phiếu</th>
+                                <th>Người mượn</th>
+                                <th>Tên sách</th>
+                                <th>Ngày mượn</th>
+                                <th>Hạn trả</th>
+                                <th>Ngày trả thực tế</th>
+                                <th>Trạng thái</th>
+                                <th>Tiền phạt</th>
+                                <th>Thao tác xử lý</th>
+                            </tr>
+                        </thead>
+                        <tbody id="borrowsTableBody">
+                            <tr>
+                                <td colspan="9" style="text-align: center; color: #64748b;">Đang tải danh sách phiếu...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab 3: The loai va Tac gia -->
+            <div id="tabMetaSection" class="hidden">
+                <div class="two-col-grid">
+                    <!-- Quan ly the loai -->
+                    <div class="card">
+                        <div class="card-title">Quản lý Thể loại sách</div>
+                        <form id="categoryForm" onsubmit="handleAddCategory(event)">
+                            <div class="form-group">
+                                <label>Tên thể loại</label>
+                                <input type="text" id="catName" required maxlength="100">
+                            </div>
+                            <div class="form-group">
+                                <label>Mô tả thể loại</label>
+                                <input type="text" id="catDescription" maxlength="255">
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm">Thêm thể loại mới</button>
+                        </form>
+                        <div class="table-responsive" style="margin-top: 16px;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Mã ID</th>
+                                        <th>Tên thể loại</th>
+                                        <th>Số sách</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="categoriesTableBody">
+                                    <tr><td colspan="4" style="text-align: center;">Đang tải...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Quan ly tac gia -->
+                    <div class="card">
+                        <div class="card-title">Quản lý Tác giả sách</div>
+                        <form id="authorForm" onsubmit="handleAddAuthor(event)">
+                            <div class="form-group">
+                                <label>Tên tác giả</label>
+                                <input type="text" id="authorFullName" required maxlength="100">
+                            </div>
+                            <div class="form-group">
+                                <label>Tiểu sử</label>
+                                <input type="text" id="authorBio" maxlength="500">
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm">Thêm tác giả mới</button>
+                        </form>
+                        <div class="table-responsive" style="margin-top: 16px;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Mã ID</th>
+                                        <th>Họ tên tác giả</th>
+                                        <th>Số sách</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="authorsTableBody">
+                                    <tr><td colspan="4" style="text-align: center;">Đang tải...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 4: Thong ke bao cao -->
+            <div id="tabStatsSection" class="card hidden">
+                <div class="toolbar">
+                    <button type="button" class="btn btn-secondary" onclick="loadStatistics()">Cập nhật số liệu thống kê</button>
+                </div>
+                <div id="statsContainer">
+                    <p style="color: #64748b;">Nhấn cập nhật số liệu để xem thống kê toàn hệ thống.</p>
+                </div>
+            </div>
+
+            <!-- Tab 5: Quan ly nguoi dung -->
+            <div id="tabUsersSection" class="card hidden">
+                <div class="toolbar">
+                    <button type="button" class="btn btn-secondary" onclick="loadUsers()">Tải danh sách tài khoản</button>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mã ID</th>
+                                <th>Tên đăng nhập</th>
+                                <th>Email</th>
+                                <th>Họ tên</th>
+                                <th>Vai trò</th>
+                                <th>Thao tác phân quyền</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: #64748b;">Đang tải danh sách tài khoản...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script xu ly giao dien quan tri -->
+    <script src="js/admin-core.js"></script>
+    <script src="js/admin-books.js"></script>
+</body>
+</html>
