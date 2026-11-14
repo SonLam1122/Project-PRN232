@@ -37,6 +37,22 @@ namespace Project_PRN232.Profiles
 
             // Anh xa User
             CreateMap<User, UserSummaryDto>();
+
+            // Anh xa BookReview
+            CreateMap<BookReview, BookReviewReadDto>()
+                .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.User != null ? src.User.Username : string.Empty))
+                .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => src.User != null ? src.User.FullName : string.Empty));
+            CreateMap<BookReviewCreateDto, BookReview>();
+
+            // Anh xa Favorite
+            CreateMap<Favorite, FavoriteReadDto>()
+                .ForMember(dest => dest.BookTitle, opt => opt.MapFrom(src => src.Book != null ? src.Book.Title : string.Empty))
+                .ForMember(dest => dest.BookIsbn, opt => opt.MapFrom(src => src.Book != null ? src.Book.ISBN : string.Empty))
+                .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Book != null && src.Book.Category != null ? src.Book.Category.Name : string.Empty))
+                .ForMember(dest => dest.AuthorName, opt => opt.MapFrom(src => src.Book != null && src.Book.Author != null ? src.Book.Author.FullName : string.Empty))
+                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Book != null ? src.Book.Price : 0))
+                .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Book != null ? src.Book.Quantity : 0))
+                .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.Book != null ? src.Book.ImageUrl : null));
         }
     }
 }

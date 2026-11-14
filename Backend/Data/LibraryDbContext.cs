@@ -15,6 +15,8 @@ namespace Project_PRN232.Data
         public DbSet<Book> Books => Set<Book>();
         public DbSet<User> Users => Set<User>();
         public DbSet<BorrowRecord> BorrowRecords => Set<BorrowRecord>();
+        public DbSet<BookReview> BookReviews => Set<BookReview>();
+        public DbSet<Favorite> Favorites => Set<Favorite>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -47,6 +49,36 @@ namespace Project_PRN232.Data
                 .WithMany(b => b.BorrowRecords)
                 .HasForeignKey(br => br.BookId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Thiet lap quan he cho Nhan xet sach (BookReviews)
+            modelBuilder.Entity<BookReview>()
+                .HasOne(r => r.Book)
+                .WithMany()
+                .HasForeignKey(r => r.BookId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<BookReview>()
+                .HasOne(r => r.User)
+                .WithMany()
+                .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Thiet lap quan he va chi muc duy nhat cho Sach yeu thich (Favorites)
+            modelBuilder.Entity<Favorite>()
+                .HasOne(f => f.Book)
+                .WithMany()
+                .HasForeignKey(f => f.BookId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Favorite>()
+                .HasOne(f => f.User)
+                .WithMany()
+                .HasForeignKey(f => f.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Favorite>()
+                .HasIndex(f => new { f.UserId, f.BookId })
+                .IsUnique();
 
             // Rang buoc duy nhat cho Username va Email cua nguoi dung
             modelBuilder.Entity<User>()

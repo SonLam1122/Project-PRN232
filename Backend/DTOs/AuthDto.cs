@@ -78,4 +78,40 @@ namespace Project_PRN232.DTOs
         [RegularExpression(@"^(Admin|User)$", ErrorMessage = "Vai tro chi co the la Admin hoac User")]
         public string Role { get; set; } = "User";
     }
+
+    // DTO cap nhat toan dien thong tin nguoi dung (danh cho Admin)
+    public class UpdateUserDto
+    {
+        [Required(ErrorMessage = "Ho ten la bat buoc")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "Ho ten tu 2 den 100 ky tu")]
+        public string FullName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Email la bat buoc")]
+        [EmailAddress(ErrorMessage = "Dia chi email khong hop le")]
+        [StringLength(100, ErrorMessage = "Email toi da 100 ky tu")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Vai tro la bat buoc")]
+        [RegularExpression(@"^(Admin|User)$", ErrorMessage = "Vai tro chi co the la Admin hoac User")]
+        public string Role { get; set; } = "User";
+
+        // Mat khau moi neu Admin muon dat lai mat khau cho nguoi dung (tuy chon)
+        [StringLength(100, MinimumLength = 8, ErrorMessage = "Mat khau moi phai toi thieu 8 ky tu")]
+        public string? NewPassword { get; set; }
+    }
+
+    // DTO chi tiet thong tin nguoi dung (danh cho Admin xem)
+    public class UserDetailDto
+    {
+        public int Id { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public int TotalBorrowed { get; set; }
+        public int CurrentlyBorrowing { get; set; }
+        public int OverdueCount { get; set; }
+        public decimal TotalFines { get; set; }
+    }
 }

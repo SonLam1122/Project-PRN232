@@ -3,53 +3,326 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Thư Viện</title>
+    <title>Hệ Thống Quản Lý Thư Viện</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="portal-wrapper">
-        <!-- Tieu de he thong -->
-        <div class="portal-header">
-            <h1>Hệ Thống Quản Lý Thư Viện</h1>
-            <p>Lựa chọn cổng làm việc theo nhu cầu của bạn</p>
+    <div class="container">
+        <!-- Thanh tieu de dau trang -->
+        <header>
+            <div>
+                <h1>Hệ Thống Quản Lý Thư Viện</h1>
+            </div>
+            <div class="auth-bar">
+                <span id="userStatus" class="badge badge-guest">Chưa đăng nhập</span>
+                <button id="btnOpenAuth" class="btn btn-primary btn-sm" onclick="openAuthModal()">Đăng nhập</button>
+                <a id="btnAdminPortal" href="admin/index.html" class="btn btn-primary btn-sm hidden">Trang Quản Trị</a>
+                <button id="btnChangePasswordModal" class="btn btn-secondary btn-sm hidden" onclick="openChangePasswordModal()">Đổi mật khẩu</button>
+                <button id="btnLogout" class="btn btn-secondary btn-sm hidden" onclick="handleLogout()">Đăng xuất</button>
+            </div>
+        </header>
+
+        <!-- Thong bao phan hoi he thong -->
+        <div id="notification" class="alert hidden"></div>
+
+        <!-- Thanh chuyen Tab noi dung -->
+        <div class="tabs">
+            <button type="button" class="tab-btn active" id="tabCatalogBtn" onclick="switchMainTab('catalog')">Tra cứu danh mục sách</button>
+            <button type="button" class="tab-btn hidden" id="tabFavoritesBtn" onclick="switchMainTab('favorites')">Sách yêu thích</button>
+            <button type="button" class="tab-btn hidden" id="tabMyBorrowsBtn" onclick="switchMainTab('myBorrows')">Phiếu mượn của tôi</button>
         </div>
 
-        <!-- Danh sach hai cong lam viec -->
-        <div class="portal-grid">
-            <!-- Cong danh cho Doc gia / Nguoi dung -->
-            <div class="portal-card">
-                <div>
-                    <h2>Cổng Độc Giả</h2>
-                    <p>Dành cho bạn đọc tra cứu tài liệu, đăng ký thuê sách, mượn sách và theo dõi lịch sử phiếu mượn cá nhân.</p>
-                    <ul>
-                        <li>Tra cứu danh mục sách và lọc theo giá</li>
-                        <li>Đăng ký tài khoản và đăng nhập</li>
-                        <li>Thực hiện yêu cầu mượn và thuê sách</li>
-                        <li>Theo dõi hạn trả và chủ động trả sách</li>
-                    </ul>
-                </div>
-                <a href="user/index.html" class="btn-portal btn-user">Truy cập Cổng Độc Giả</a>
+        <!-- Tab 1: Tra cuu danh muc sach xem duoc ngay khong can dang nhap -->
+        <div id="tabCatalogSection" class="card">
+            <div class="toolbar">
+                <input type="text" id="searchKeyword" placeholder="Nhập tên sách để tìm kiếm">
+                <select id="sortOrder" style="width: 180px;">
+                    <option value="">Sắp xếp mặc định</option>
+                    <option value="Price asc">Giá tăng dần</option>
+                    <option value="Price desc">Giá giảm dần</option>
+                    <option value="Title asc">Tiêu đề A đến Z</option>
+                </select>
+                <button type="button" class="btn btn-primary" onclick="loadBooks()">Tìm kiếm</button>
+                <button type="button" class="btn btn-secondary" onclick="resetFilters()">Tải lại</button>
             </div>
 
-            <!-- Cong danh cho Quan tri vien Thu vien -->
-            <div class="portal-card">
-                <div>
-                    <h2>Cổng Quản Trị Thư Viện</h2>
-                    <p>Dành cho thủ thư và ban quản trị thực hiện quản lý kho sách, thể loại, tác giả, duyệt mượn trả và xem báo cáo.</p>
-                    <ul>
-                        <li>Quản lý toàn diện kho sách và xuất dữ liệu</li>
-                        <li>Quản lý danh mục thể loại và tác giả</li>
-                        <li>Kiểm duyệt phiếu mượn và thu phạt quá hạn</li>
-                        <li>Thống kê tổng hợp số liệu và phân quyền</li>
-                    </ul>
-                </div>
-                <a href="admin/index.html" class="btn-portal btn-admin">Truy cập Cổng Quản Trị</a>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 70px; text-align: center;">Hình ảnh</th>
+                            <th>Tiêu đề sách</th>
+                            <th>Mã ISBN</th>
+                            <th>Thể loại</th>
+                            <th>Tác giả</th>
+                            <th style="white-space: nowrap;">Giá thuê</th>
+                            <th style="white-space: nowrap;">Tình trạng</th>
+                            <th style="white-space: nowrap;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="booksTableBody">
+                        <tr>
+                            <td colspan="8" style="text-align: center; color: #64748b;">Đang tải danh sách sách...</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <div class="portal-footer">
-            Dự án môn học PRN232 - Nền tảng ASP.NET Core Web API
+        <!-- Tab 2: Phieu muon ca nhan -->
+        <div id="tabMyBorrowsSection" class="card hidden">
+            <div class="toolbar">
+                <button type="button" class="btn btn-secondary" onclick="loadMyBorrowRecords()">Làm mới danh sách phiếu</button>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã phiếu</th>
+                            <th>Tên sách</th>
+                            <th>Ngày mượn</th>
+                            <th>Hạn trả</th>
+                            <th>Ngày trả</th>
+                            <th>Trạng thái</th>
+                            <th>Phạt phát sinh</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="myBorrowsTableBody">
+                        <tr>
+                            <td colspan="8" style="text-align: center; color: #64748b;">Vui lòng đăng nhập để xem danh sách phiếu mượn</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 3: Danh sach sach yeu thich cua doc gia -->
+        <div id="tabFavoritesSection" class="card hidden">
+            <div class="toolbar">
+                <button type="button" class="btn btn-secondary" onclick="loadFavorites()">Làm mới danh sách yêu thích</button>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 70px; text-align: center;">Hình ảnh</th>
+                            <th>Tiêu đề sách</th>
+                            <th>Mã ISBN</th>
+                            <th>Thể loại</th>
+                            <th>Tác giả</th>
+                            <th style="white-space: nowrap;">Giá thuê</th>
+                            <th style="white-space: nowrap;">Tình trạng</th>
+                            <th style="white-space: nowrap;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="favoritesTableBody">
+                        <tr>
+                            <td colspan="8" style="text-align: center; color: #64748b;">Vui lòng đăng nhập để xem danh sách yêu thích</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
+
+    <!-- Hop thoai Dang nhap va Dang ky -->
+    <div id="authModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="tabs" style="margin-bottom: 0; border-bottom: none;">
+                    <button type="button" id="tabAuthLoginBtn" class="tab-btn active" onclick="switchAuthTab('login')">Đăng nhập</button>
+                    <button type="button" id="tabAuthRegisterBtn" class="tab-btn" onclick="switchAuthTab('register')">Đăng ký</button>
+                </div>
+                <button type="button" class="btn-close" onclick="closeAuthModal()">&times;</button>
+            </div>
+
+            <!-- Form dang nhap -->
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Tên đăng nhập</label>
+                    <input type="text" id="loginUsername" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label>Mật khẩu</label>
+                    <input type="password" id="loginPassword" required autocomplete="current-password">
+                </div>
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Đăng nhập</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeAuthModal()">Hủy</button>
+                </div>
+            </form>
+
+            <!-- Form dang ky -->
+            <form id="registerForm" class="hidden" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label>Tên đăng nhập</label>
+                    <input type="text" id="regUsername" required maxlength="50">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="regEmail" required maxlength="100">
+                </div>
+                <div class="form-group">
+                    <label>Họ và tên</label>
+                    <input type="text" id="regFullName" required maxlength="100">
+                </div>
+                <div class="form-group">
+                    <label>Mật khẩu</label>
+                    <input type="password" id="regPassword" required minlength="8">
+                </div>
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-success" style="flex: 1;">Tạo tài khoản</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeAuthModal()">Hủy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Hop thoai Chi tiet thong tin sach -->
+    <div id="bookDetailModal" class="modal-overlay hidden" onclick="handleDetailOverlayClick(event)">
+        <div class="modal-detail-content">
+            <div class="modal-header">
+                <div class="card-title" style="margin-bottom: 0; border-bottom: none;">Thông tin chi tiết sách</div>
+                <button type="button" class="btn-close" onclick="closeBookDetailModal()">&times;</button>
+            </div>
+            <div class="book-detail-layout">
+                <img id="detailBookCover" src="images/books/book-1.svg" alt="Bìa sách" class="book-detail-cover">
+                <div class="book-detail-info">
+                    <h3 id="detailBookTitle" class="book-detail-title">Tiêu đề sách</h3>
+                    <div class="book-detail-row">
+                        <span class="book-detail-label">Tác giả:</span>
+                        <span id="detailBookAuthor" class="book-detail-val">-</span>
+                    </div>
+                    <div class="book-detail-row">
+                        <span class="book-detail-label">Thể loại:</span>
+                        <span id="detailBookCategory" class="book-detail-val">-</span>
+                    </div>
+                    <div class="book-detail-row">
+                        <span class="book-detail-label">Mã ISBN:</span>
+                        <code id="detailBookIsbn" class="book-detail-val">-</code>
+                    </div>
+                    <div class="book-detail-row">
+                        <span class="book-detail-label">Giá thuê:</span>
+                        <span id="detailBookPrice" class="book-detail-val" style="font-weight: 600; color: #0284c7;">-</span>
+                    </div>
+                    <div class="book-detail-row">
+                        <span class="book-detail-label">Tình trạng:</span>
+                        <span id="detailBookQuantity" class="book-detail-val">-</span>
+                    </div>
+                    <div class="book-detail-row">
+                        <span class="book-detail-label">Ngày phát hành:</span>
+                        <span id="detailBookPublished" class="book-detail-val">-</span>
+                    </div>
+                    <div class="book-detail-desc" id="detailBookDesc">
+                        Mô tả tóm tắt nội dung sách.
+                    </div>
+                    <div class="btn-group" style="margin-top: 10px;">
+                        <button type="button" id="detailBorrowBtn" class="btn btn-primary" style="flex: 1;">Mượn sách này</button>
+                        <button type="button" id="detailFavoriteBtn" class="btn btn-secondary" onclick="handleDetailToggleFavorite()">Lưu yêu thích</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeBookDetailModal()">Đóng</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phan danh gia va nhan xet tu ban doc -->
+            <div class="reviews-section">
+                <div class="reviews-header">
+                    <h4>Đánh giá từ bạn đọc</h4>
+                    <span id="detailAvgRating" class="rating-badge">0 sao</span>
+                </div>
+
+                <!-- Form viet nhan xet danh cho doc gia da dang nhap -->
+                <div id="reviewFormContainer" class="review-form hidden">
+                    <form id="bookReviewForm" onsubmit="handleSubmitReview(event)">
+                        <input type="hidden" id="reviewBookId">
+                        <div class="form-group" style="margin-bottom: 8px;">
+                            <label>Mức độ đánh giá</label>
+                            <select id="reviewRating" style="padding: 6px 10px;">
+                                <option value="5">5 sao - Rất hài lòng</option>
+                                <option value="4">4 sao - Hài lòng</option>
+                                <option value="3">3 sao - Bình thường</option>
+                                <option value="2">2 sao - Chưa ưng ý</option>
+                                <option value="1">1 sao - Kém</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 8px;">
+                            <label>Nhận xét cảm nghĩ</label>
+                            <textarea id="reviewComment" rows="2" required maxlength="1000" placeholder="Chia sẻ cảm nhận của bạn về cuốn sách" style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-family: inherit;"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">Gửi đánh giá</button>
+                    </form>
+                </div>
+                <div id="reviewLoginPrompt" class="alert alert-success" style="padding: 8px 12px; font-size: 13px; margin-bottom: 12px;">
+                    Đăng nhập tài khoản để viết nhận xét và chia sẻ đánh giá cho cuốn sách này.
+                </div>
+
+                <!-- Danh sach nhan xet -->
+                <div id="detailReviewsList" class="review-list">
+                    <div style="color: #64748b; font-size: 13px;">Chưa có nhận xét nào. Hãy là người đầu tiên đánh giá cuốn sách này.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hop thoai Dang ky muon sach -->
+    <div id="borrowModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="card-title" style="margin-bottom: 0; border-bottom: none;">Đăng ký mượn sách</div>
+                <button type="button" class="btn-close" onclick="closeBorrowModal()">&times;</button>
+            </div>
+            <form id="borrowForm" onsubmit="handleBorrowBook(event)">
+                <input type="hidden" id="borrowBookId">
+                <div class="form-group">
+                    <label>Sách đã chọn</label>
+                    <input type="text" id="borrowBookTitle" readonly style="background-color: #f8fafc; font-weight: 600;">
+                </div>
+                <div class="form-group">
+                    <label>Hạn hẹn trả</label>
+                    <input type="date" id="borrowDueDate" required>
+                </div>
+                <div class="form-group">
+                    <label>Ghi chú mượn</label>
+                    <input type="text" id="borrowNotes" maxlength="200" placeholder="Mục đích mượn">
+                </div>
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-success" style="flex: 1;">Xác nhận mượn</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeBorrowModal()">Hủy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Hop thoai Doi mat khau -->
+    <div id="changePasswordModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="card-title" style="margin-bottom: 0; border-bottom: none;">Đổi mật khẩu</div>
+                <button type="button" class="btn-close" onclick="closeChangePasswordModal()">&times;</button>
+            </div>
+            <form id="changePasswordForm" onsubmit="handleChangePassword(event)">
+                <div class="form-group">
+                    <label>Mật khẩu hiện tại</label>
+                    <input type="password" id="currentPassword" required>
+                </div>
+                <div class="form-group">
+                    <label>Mật khẩu mới</label>
+                    <input type="password" id="newPassword" required minlength="8">
+                </div>
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Xác nhận</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeChangePasswordModal()">Hủy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script xu ly giao dien trang chu -->
+    <script src="js/home.js"></script>
+    <script src="js/home-reviews.js"></script>
+    <script src="js/home-favorites.js"></script>
 </body>
 </html>

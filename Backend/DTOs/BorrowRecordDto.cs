@@ -17,6 +17,7 @@ namespace Project_PRN232.DTOs
         public DateTime? ReturnDate { get; set; }
         public string Status { get; set; } = string.Empty;
         public decimal FineAmount { get; set; }
+        public int RenewalCount { get; set; }
         public string? Notes { get; set; }
     }
 

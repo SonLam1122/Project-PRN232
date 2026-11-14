@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.OData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -17,6 +18,12 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<LibraryDbContext>(options =>
     options.UseSqlServer(connectionString));
 
+// Luu khoa DataProtection trong thu muc du an
+var keysDirectory = new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "DataProtection-Keys"));
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(keysDirectory)
+    .SetApplicationName("PRN232_LibrarySystem");
+
 // 2. Dang ky cac dich vu nghiep vu va bao mat
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
@@ -31,6 +38,8 @@ builder.Services.AddControllers(options =>
     options.RespectBrowserAcceptHeader = true;
     // Dang ky Custom CSV Formatter
     options.OutputFormatters.Add(new CsvOutputFormatter());
+    // XML serializer mac dinh khong ho tro EnumerableQuery tu OData.
+    options.OutputFormatters.Add(new BookXmlOutputFormatter());
 })
 .AddXmlSerializerFormatters() // Ho tro dinh dang XML
 .AddOData(opt => opt.Select().Filter().OrderBy().Expand().Count().SetMaxTop(100)); // Bat tinh nang OData

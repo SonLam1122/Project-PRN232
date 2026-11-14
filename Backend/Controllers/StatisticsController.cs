@@ -54,6 +54,47 @@ namespace Project_PRN232.Controllers
 
             return Ok(summary);
         }
+
+        // GET: api/statistics/top-books - Top 5 sach duoc muon nhieu nhat
+        [HttpGet("top-books")]
+        public async Task<IActionResult> GetTopBorrowedBooks()
+        {
+            var topBooks = await _context.BorrowRecords
+                .Include(br => br.Book)
+                .GroupBy(br => new { br.BookId, br.Book!.Title, br.Book.Price, br.Book.ImageUrl })
+                .Select(g => new
+                {
+                    BookId = g.Key.BookId,
+                    Title = g.Key.Title,
+                    ImageUrl = g.Key.ImageUrl,
+                    Price = g.Key.Price,
+                    BorrowCount = g.Count()
+                })
+                .OrderByDescending(x => x.BorrowCount)
+                .Take(5)
+                .ToListAsync();
+
+            return Ok(topBooks);
+        }
+
+        // GET: api/statistics/category-distribution - Ty le dau sach va phieu muon theo the loai
+        [HttpGet("category-distribution")]
+        public async Task<IActionResult> GetCategoryDistribution()
+        {
+            var distribution = await _context.Categories
+                .Select(c => new
+                {
+                    CategoryId = c.Id,
+                    CategoryName = c.Name,
+                    BookCount = c.Books.Count,
+                    TotalCopies = c.Books.Sum(b => (int?)b.Quantity) ?? 0,
+                    BorrowCount = c.Books.SelectMany(b => b.BorrowRecords).Count()
+                })
+                .OrderByDescending(x => x.BorrowCount)
+                .ToListAsync();
+
+            return Ok(distribution);
+        }
     }
 }
 

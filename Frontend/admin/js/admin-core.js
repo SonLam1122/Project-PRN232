@@ -11,10 +11,13 @@ const adminState = {
 
 // Khoi chay khi trang tai xong
 document.addEventListener("DOMContentLoaded", () => {
-    updateAuthUi();
-    if (adminState.token && adminState.role === "Admin") {
-        initAdminData();
+    // Neu chua dang nhap hoac khong phai quan tri vien thi dieu huong ve trang chinh
+    if (!adminState.token || adminState.role !== "Admin") {
+        window.location.replace("../index.html");
+        return;
     }
+    updateAuthUi();
+    initAdminData();
 });
 
 // Khoi tao cac danh muc can thiet cho quan tri
@@ -71,36 +74,17 @@ function updateAuthUi() {
     const statusElem = document.getElementById("userStatus");
     const logoutBtn = document.getElementById("btnLogout");
     const changePassBtn = document.getElementById("btnChangePasswordModal");
-    const loginCard = document.getElementById("loginCard");
-    const mainSection = document.getElementById("mainAdminSection");
 
-    if (adminState.token && adminState.role === "Admin") {
-        statusElem.textContent = `${adminState.username} - Quản trị viên`;
-        statusElem.className = "badge badge-admin";
-        logoutBtn.classList.remove("hidden");
-        changePassBtn.classList.remove("hidden");
-        loginCard.classList.add("hidden");
-        mainSection.classList.remove("hidden");
-    } else {
-        statusElem.textContent = "Chưa đăng nhập quản trị";
-        statusElem.className = "badge badge-guest";
-        logoutBtn.classList.add("hidden");
-        changePassBtn.classList.add("hidden");
-        loginCard.classList.remove("hidden");
-        mainSection.classList.add("hidden");
-    }
+    statusElem.textContent = `${adminState.username} - Quản trị viên`;
+    statusElem.className = "badge badge-admin";
+    logoutBtn.classList.remove("hidden");
+    changePassBtn.classList.remove("hidden");
 }
 
 // Dong mo hop thoai doi mat khau
 function toggleChangePasswordCard() {
     const card = document.getElementById("changePasswordCard");
     card.classList.toggle("hidden");
-}
-
-// Dien thong tin tai khoan mau admin
-function fillAdminAccount() {
-    document.getElementById("loginUsername").value = "admin";
-    document.getElementById("loginPassword").value = "Admin@123456";
 }
 
 // Hien thi thong bao he thong
@@ -112,47 +96,6 @@ function showAlert(message, isError = false) {
     setTimeout(() => {
         box.classList.add("hidden");
     }, 4500);
-}
-
-// Dang nhap tai khoan quan tri
-async function handleLogin(event) {
-    event.preventDefault();
-    const username = document.getElementById("loginUsername").value.trim();
-    const password = document.getElementById("loginPassword").value;
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password })
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-            if (data.role !== "Admin") {
-                showAlert("Tài khoản không có quyền quản trị viên thư viện", true);
-                return;
-            }
-
-            adminState.token = data.token;
-            adminState.role = data.role;
-            adminState.username = data.username;
-
-            localStorage.setItem("jwt_token", data.token);
-            localStorage.setItem("user_role", data.role);
-            localStorage.setItem("user_name", data.username);
-
-            updateAuthUi();
-            initAdminData();
-            showAlert(`Chào mừng quản trị viên ${data.username}`);
-        } else {
-            console.error("Loi dang nhap:", data);
-            showAlert(data.message || "Tên đăng nhập hoặc mật khẩu không đúng", true);
-        }
-    } catch (err) {
-        console.error("Loi ket noi dang nhap:", err);
-        showAlert("Không thể kết nối đến máy chủ", true);
-    }
 }
 
 // Doi mat khau quan tri
@@ -186,7 +129,7 @@ async function handleChangePassword(event) {
     }
 }
 
-// Dang xuat
+// Dang xuat va tra ve trang chu
 function handleLogout() {
     adminState.token = "";
     adminState.role = "";
@@ -194,8 +137,7 @@ function handleLogout() {
     localStorage.removeItem("jwt_token");
     localStorage.removeItem("user_role");
     localStorage.removeItem("user_name");
-    updateAuthUi();
-    showAlert("Đã đăng xuất phiên làm việc quản trị");
+    window.location.replace("../index.html");
 }
 
 // Header xac thuc kem JWT token
@@ -206,15 +148,20 @@ function getAuthHeaders() {
     };
 }
 
-// Tai bao cao thong ke
+// Tai bao cao thong ke tong quan va chuyen sau
 async function loadStatistics() {
     try {
-        const res = await fetch(`${API_BASE_URL}/api/statistics/summary`, {
-            headers: getAuthHeaders()
-        });
+        const [sumRes, topRes, catRes] = await Promise.all([
+            fetch(`${API_BASE_URL}/api/statistics/summary`, { headers: getAuthHeaders() }),
+            fetch(`${API_BASE_URL}/api/statistics/top-books`, { headers: getAuthHeaders() }),
+            fetch(`${API_BASE_URL}/api/statistics/category-distribution`, { headers: getAuthHeaders() })
+        ]);
 
-        if (!res.ok) throw new Error("Không thể tải thống kê");
-        const s = await res.json();
+        if (!sumRes.ok) throw new Error("Không thể tải thống kê");
+        const s = await sumRes.json();
+        const topBooks = topRes.ok ? await topRes.json() : [];
+        const catStats = catRes.ok ? await catRes.json() : [];
+
         const container = document.getElementById("statsContainer");
         container.innerHTML = `
             <div class="stats-grid">
@@ -223,20 +170,72 @@ async function loadStatistics() {
                     <div class="stat-label">Tổng đầu sách</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number">${s.totalCopies || 0}</div>
+                    <div class="stat-number">${s.totalCopiesInStock || s.totalCopies || 0}</div>
                     <div class="stat-label">Tổng sách trong kho</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number">${s.activeBorrowRecords || 0}</div>
+                    <div class="stat-number">${s.activeBorrowingCount || s.activeBorrowRecords || 0}</div>
                     <div class="stat-label">Phiếu đang mượn</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number" style="color: #ef4444;">${s.overdueBorrowRecords || 0}</div>
+                    <div class="stat-number" style="color: #ef4444;">${s.overdueCount || s.overdueBorrowRecords || 0}</div>
                     <div class="stat-label">Phiếu quá hạn</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-number" style="color: #16a34a;">${Number(s.totalFinesCollected || 0).toLocaleString("vi-VN")} đ</div>
                     <div class="stat-label">Tổng tiền phạt thu được</div>
+                </div>
+            </div>
+
+            <div class="two-col-grid" style="margin-top: 24px;">
+                <!-- Top 5 sach muon nhieu nhat -->
+                <div class="card" style="margin-bottom: 0;">
+                    <div class="card-title">Top 5 sách được mượn nhiều nhất</div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tiêu đề sách</th>
+                                    <th>Giá thuê</th>
+                                    <th style="text-align: right;">Số lượt mượn</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${topBooks.length === 0 ? `<tr><td colspan="3" style="text-align:center;">Chưa có dữ liệu</td></tr>` : topBooks.map(b => `
+                                    <tr>
+                                        <td><strong>${escapeHtml(b.title)}</strong></td>
+                                        <td>${Number(b.price || 0).toLocaleString("vi-VN")} đ</td>
+                                        <td style="text-align: right;"><span class="badge badge-active">${b.borrowCount} lượt</span></td>
+                                    </tr>
+                                `).join("")}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Phan bo theo the loai -->
+                <div class="card" style="margin-bottom: 0;">
+                    <div class="card-title">Tỷ lệ mượn theo thể loại</div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tên thể loại</th>
+                                    <th>Số đầu sách</th>
+                                    <th style="text-align: right;">Số lượt mượn</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${catStats.length === 0 ? `<tr><td colspan="3" style="text-align:center;">Chưa có dữ liệu</td></tr>` : catStats.map(c => `
+                                    <tr>
+                                        <td><strong>${escapeHtml(c.categoryName)}</strong></td>
+                                        <td>${c.bookCount} sách</td>
+                                        <td style="text-align: right;"><span class="badge badge-returned">${c.borrowCount} lượt</span></td>
+                                    </tr>
+                                `).join("")}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         `;
@@ -260,13 +259,13 @@ async function loadUsers() {
             <tr>
                 <td>#${u.id}</td>
                 <td><strong>${escapeHtml(u.username)}</strong></td>
-                <td>${escapeHtml(u.email)}</td>
                 <td>${escapeHtml(u.fullName || "-")}</td>
+                <td>${escapeHtml(u.email)}</td>
                 <td><span class="badge ${u.role === "Admin" ? "badge-admin" : "badge-user"}">${u.role}</span></td>
-                <td>
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="changeRole(${u.id}, '${u.role === "Admin" ? "User" : "Admin"}')">
-                        Đổi sang ${u.role === "Admin" ? "User" : "Admin"}
-                    </button>
+                <td>${formatDate(u.createdAt)}</td>
+                <td style="white-space: nowrap;">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="viewUserDetail(${u.id})">Chi tiết</button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="openEditUserModal(${u.id})">Chỉnh sửa</button>
                 </td>
             </tr>
         `).join("");
@@ -276,14 +275,150 @@ async function loadUsers() {
     }
 }
 
-// Thay doi vai tro nguoi dung
+// Xem chi tiet thong tin va thong ke nguoi dung
+async function viewUserDetail(userId) {
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
+            headers: getAuthHeaders()
+        });
+
+        if (!res.ok) {
+            showAlert("Không thể tải chi tiết thông tin người dùng", true);
+            return;
+        }
+
+        const u = await res.json();
+        document.getElementById("detailUserId").textContent = `#${u.id}`;
+        document.getElementById("detailUserUsername").textContent = u.username;
+        document.getElementById("detailUserFullName").textContent = u.fullName || "-";
+        document.getElementById("detailUserEmail").textContent = u.email;
+        document.getElementById("detailUserRole").innerHTML = `<span class="badge ${u.role === "Admin" ? "badge-admin" : "badge-user"}">${u.role}</span>`;
+        document.getElementById("detailUserCreatedAt").textContent = formatDate(u.createdAt);
+        document.getElementById("detailUserTotalBorrowed").textContent = `${u.totalBorrowed} lượt`;
+        document.getElementById("detailUserCurrentlyBorrowing").textContent = `${u.currentlyBorrowing} cuốn`;
+        document.getElementById("detailUserOverdueCount").textContent = `${u.overdueCount} phiếu`;
+        document.getElementById("detailUserTotalFines").textContent = `${Number(u.totalFines || 0).toLocaleString("vi-VN")} đ`;
+
+        document.getElementById("btnSwitchToEditUser").onclick = () => {
+            closeUserDetailModal();
+            openEditUserModal(userId);
+        };
+
+        document.getElementById("userDetailModal").classList.remove("hidden");
+    } catch (err) {
+        console.error("Loi xem chi tiet nguoi dung:", err);
+        showAlert("Lỗi khi tải chi tiết người dùng", true);
+    }
+}
+
+// Dong hop thoai xem chi tiet nguoi dung
+function closeUserDetailModal() {
+    const modal = document.getElementById("userDetailModal");
+    if (modal) modal.classList.add("hidden");
+}
+
+// Mo hop thoai chinh sua thong tin nguoi dung
+async function openEditUserModal(userId) {
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
+            headers: getAuthHeaders()
+        });
+
+        if (!res.ok) {
+            showAlert("Không thể lấy thông tin người dùng để sửa", true);
+            return;
+        }
+
+        const u = await res.json();
+        document.getElementById("editUserId").value = u.id;
+        document.getElementById("editUsername").value = u.username;
+        document.getElementById("editFullName").value = u.fullName || "";
+        document.getElementById("editEmail").value = u.email || "";
+        document.getElementById("editRole").value = u.role || "User";
+        document.getElementById("editPassword").value = "";
+
+        document.getElementById("editUserModal").classList.remove("hidden");
+    } catch (err) {
+        console.error("Loi mo hop thoai sua nguoi dung:", err);
+        showAlert("Lỗi khi nạp dữ liệu chỉnh sửa người dùng", true);
+    }
+}
+
+// Dong hop thoai chinh sua nguoi dung
+function closeEditUserModal() {
+    const modal = document.getElementById("editUserModal");
+    if (modal) {
+        modal.classList.add("hidden");
+        document.getElementById("editUserForm").reset();
+    }
+}
+
+// Xu ly luu cap nhat thong tin nguoi dung
+async function handleSaveUser(event) {
+    event.preventDefault();
+
+    const userId = parseInt(document.getElementById("editUserId").value, 10);
+    const fullName = document.getElementById("editFullName").value.trim();
+    const email = document.getElementById("editEmail").value.trim();
+    const role = document.getElementById("editRole").value;
+    const newPassword = document.getElementById("editPassword").value;
+
+    if (!userId) {
+        showAlert("Mã người dùng không hợp lệ", true);
+        return;
+    }
+
+    const payload = {
+        fullName,
+        email,
+        role,
+        newPassword: newPassword || null
+    };
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
+            method: "PUT",
+            headers: {
+                ...getAuthHeaders(),
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+            showAlert(data.message || "Đã lưu thay đổi thông tin người dùng");
+            closeEditUserModal();
+            loadUsers();
+        } else {
+            console.error("Loi cap nhat nguoi dung:", data);
+            showAlert(data.message || "Cập nhật thông tin người dùng thất bại", true);
+        }
+    } catch (err) {
+        console.error("Loi ket noi cap nhat nguoi dung:", err);
+        showAlert("Không thể kết nối đến máy chủ khi cập nhật", true);
+    }
+}
+
+// Xu ly dong modal khi bam ra vung nen ngoai
+function handleUserModalOverlayClick(event, modalId) {
+    if (event.target && event.target.id === modalId) {
+        if (modalId === "userDetailModal") closeUserDetailModal();
+        if (modalId === "editUserModal") closeEditUserModal();
+    }
+}
+
+// Thay doi vai tro nguoi dung nhanh
 async function changeRole(userId, newRole) {
     if (!confirm(`Xác nhận đổi quyền tài khoản #${userId} thành ${newRole}?`)) return;
     try {
         const res = await fetch(`${API_BASE_URL}/api/users/${userId}/role`, {
             method: "PUT",
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ newRole })
+            headers: {
+                ...getAuthHeaders(),
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ role: newRole })
         });
 
         if (res.ok) {

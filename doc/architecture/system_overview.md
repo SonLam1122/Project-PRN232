@@ -13,7 +13,7 @@ He thong duoc mo hinh hoa voi 5 thuc the quan he chat che:
 3. **Categories** (`Id`, `Name`, `Description`)
    - Rang buoc duy nhat: `Name`.
    - Quan he 1-N voi `Books`.
-4. **Books** (`Id`, `Title`, `ISBN`, `Description`, `Price`, `Quantity`, `PublishedDate`, `AuthorId`, `CategoryId`)
+4. **Books** (`Id`, `Title`, `ISBN`, `Description`, `ImageUrl`, `Price`, `Quantity`, `PublishedDate`, `AuthorId`, `CategoryId`)
    - Rang buoc duy nhat: `ISBN`.
    - Rang buoc gia va so luong hop le (Quantity >= 0).
    - Khoa ngoai den `AuthorId` va `CategoryId`.
@@ -73,18 +73,16 @@ Project PRN232/
 │   ├── Program.cs           # Pipeline may chu API
 │   ├── Project PRN232.csproj
 │   └── Project PRN232.http  # Kich ban test REST Client
-├── Frontend/                # Giao dien Web Client phan tach ro rang
+├── Frontend/                # Giao dien Web Client
 │   ├── admin/               # Web Quan ly Thu vien (Danh cho Thu thu va Admin)
 │   │   ├── css/style.css    # Giao dien dashboard quan tri
 │   │   ├── js/admin-core.js # Quan tri xac thuc, tabs, thong ke, nguoi dung
 │   │   ├── js/admin-books.js# Quan ly kho sach, the loai, tac gia, muon tra
 │   │   └── index.html       # Giao dien quan ly thu vien
-│   ├── user/                # Web Doc Gia (Thue va Muon sach)
-│   │   ├── css/style.css    # Giao dien doc gia
-│   │   ├── js/user.js       # Tra cuu sach, dat muon, lich su phieu muon
-│   │   └── index.html       # Giao dien thue va muon sach
-│   ├── css/style.css        # Giao dien Cong Dieu Huong
-│   └── index.html           # Cong Dieu Huong trung tam (Portal Hub)
+│   ├── css/style.css        # Giao dien Trang chu thu vien
+│   ├── js/home.js           # Xu ly Trang chu, tra cuu sach, phan quyen sau dang nhap
+│   ├── index.html           # Trang chu chinh cua he thong thu vien
+│   └── user/index.html      # Diem chuyen tiep ve Trang chu
 ├── doc/                     # Tai lieu he thong
 │   ├── api/
 │   │   └── api_specification.md

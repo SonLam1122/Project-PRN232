@@ -36,17 +36,25 @@ async function loadAuthors() {
     }
 }
 
-// Tai danh sach sach
-async function loadBooks() {
+// Dung chung truy van de file xuat khop danh sach sach dang hien thi.
+function getBooksUrl() {
     const keyword = document.getElementById("searchKeyword").value.trim();
     const sort = document.getElementById("sortOrder").value;
 
     let url = `${API_BASE_URL}/api/books?$top=50`;
-    if (keyword) url += `&$filter=contains(tolower(Title), '${keyword.toLowerCase()}')`;
+    if (keyword) {
+        const escapedKeyword = keyword.toLowerCase().replace(/'/g, "''");
+        url += `&$filter=${encodeURIComponent(`contains(tolower(Title), '${escapedKeyword}')`)}`;
+    }
     if (sort) url += `&$orderby=${encodeURIComponent(sort)}`;
 
+    return url;
+}
+
+// Tai danh sach sach
+async function loadBooks() {
     try {
-        const res = await fetch(url, { headers: { "Accept": "application/json" } });
+        const res = await fetch(getBooksUrl(), { headers: { "Accept": "application/json" } });
         const books = await res.json();
         renderBooksTable(books);
     } catch (err) {
@@ -101,6 +109,7 @@ async function handleSaveBook(event) {
         quantity: parseInt(document.getElementById("bookQuantity").value, 10),
         authorId: parseInt(document.getElementById("bookAuthorId").value, 10),
         publishedDate: document.getElementById("bookPublishedDate").value,
+        imageUrl: document.getElementById("bookImageUrl") ? document.getElementById("bookImageUrl").value.trim() : null,
         description: document.getElementById("bookDescription").value.trim()
     };
 
@@ -144,6 +153,7 @@ async function editBook(id) {
         document.getElementById("bookQuantity").value = b.quantity;
         document.getElementById("bookAuthorId").value = b.authorId;
         document.getElementById("bookPublishedDate").value = b.publishedDate.split("T")[0];
+        document.getElementById("bookImageUrl").value = b.imageUrl || "";
         document.getElementById("bookDescription").value = b.description || "";
 
         document.getElementById("formTitle").textContent = `Chỉnh sửa sách #${b.id}`;
@@ -186,24 +196,47 @@ async function deleteBook(id) {
 function resetBookForm() {
     document.getElementById("bookForm").reset();
     document.getElementById("bookId").value = "";
+    if (document.getElementById("bookImageUrl")) document.getElementById("bookImageUrl").value = "";
     document.getElementById("formTitle").textContent = "Thêm sách mới vào kho";
     document.getElementById("btnSaveBook").textContent = "Lưu thông tin sách";
     document.getElementById("btnCancelEdit").classList.add("hidden");
 }
 
-// Xuat du lieu theo Content Negotiation
+// Tai file theo Content Negotiation; chi tao file khi API tra dung dinh dang.
 async function fetchContent(mediaType) {
-    const pre = document.getElementById("apiOutput");
-    pre.textContent = `Đang gửi yêu cầu Accept: ${mediaType}...`;
+    const extensions = { "application/json": "json", "application/xml": "xml", "text/csv": "csv" };
+    const extension = extensions[mediaType];
+    if (!extension) return;
+
     try {
-        const res = await fetch(`${API_BASE_URL}/api/books?$top=5`, {
+        const res = await fetch(getBooksUrl(), {
             headers: { "Accept": mediaType }
         });
-        const text = await res.text();
-        pre.textContent = text;
+        if (!res.ok) throw new Error(`Không thể xuất dữ liệu. HTTP ${res.status}`);
+        if (res.headers.get("Content-Type")?.split(";")[0].trim() !== mediaType) {
+            throw new Error("API trả về sai định dạng dữ liệu");
+        }
+
+        // BOM giup Excel nhan dung tieng Viet trong file CSV.
+        const content = await res.blob();
+        const file = mediaType === "text/csv"
+            ? new Blob(["\uFEFF", content], { type: "text/csv;charset=utf-8" })
+            : content;
+        const url = URL.createObjectURL(file);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `books.${extension}`;
+        document.body.appendChild(link);
+        try {
+            link.click();
+        } finally {
+            link.remove();
+            // Cho trinh duyet bat dau tai truoc khi giai phong URL tam.
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
     } catch (err) {
         console.error("Loi xuat noi dung:", err);
-        pre.textContent = `Lỗi yêu cầu: ${err.message}`;
+        showAlert(err.message, true);
     }
 }
 
@@ -233,7 +266,7 @@ function renderBorrowRecords(records) {
     tbody.innerHTML = records.map(r => {
         let badgeClass = "badge-guest";
         let statusText = r.status;
-        if (r.status === "Active") {
+        if (r.status === "Active" || r.status === "Borrowing") {
             badgeClass = "badge-active";
             statusText = "Đang mượn";
         } else if (r.status === "Returned") {
@@ -244,7 +277,8 @@ function renderBorrowRecords(records) {
             statusText = "Quá hạn";
         }
 
-        const canReturn = r.status === "Active" || r.status === "Overdue";
+        const canReturn = r.status === "Active" || r.status === "Borrowing" || r.status === "Overdue";
+        const canRenew = (r.status === "Active" || r.status === "Borrowing") && Number(r.renewalCount || 0) < 2;
 
         return `
             <tr>
@@ -254,14 +288,40 @@ function renderBorrowRecords(records) {
                 <td>${formatDate(r.borrowDate)}</td>
                 <td>${formatDate(r.dueDate)}</td>
                 <td>${r.returnDate ? formatDate(r.returnDate) : "-"}</td>
-                <td><span class="badge ${badgeClass}">${statusText}</span></td>
-                <td>${Number(r.fineAmount || 0).toLocaleString("vi-VN")} đ</td>
                 <td>
+                    <span class="badge ${badgeClass}">${statusText}</span>
+                    ${Number(r.renewalCount || 0) > 0 ? `<div style="font-size: 11px; color: #64748b; margin-top: 2px;">Gia hạn: ${r.renewalCount}/2 lần</div>` : ""}
+                </td>
+                <td>${Number(r.fineAmount || 0).toLocaleString("vi-VN")} đ</td>
+                <td style="white-space: nowrap;">
+                    ${canRenew ? `<button type="button" class="btn btn-secondary btn-sm" style="margin-right: 4px;" onclick="renewBookAdmin(${r.id})">Gia hạn</button>` : ""}
                     ${canReturn ? `<button type="button" class="btn btn-primary btn-sm" onclick="returnBookAdmin(${r.id})">Nhận trả</button>` : "-"}
                 </td>
             </tr>
         `;
     }).join("");
+}
+
+// Quan tri vien gia han phieu muon them 7 ngay
+async function renewBookAdmin(id) {
+    if (!confirm(`Xác nhận gia hạn phiếu #${id} thêm 7 ngày?`)) return;
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/borrowrecords/${id}/renew`, {
+            method: "PUT",
+            headers: getAuthHeaders()
+        });
+        const data = await res.json();
+        if (res.ok) {
+            showAlert(data.message || "Gia hạn phiếu mượn thành công");
+            loadBorrowRecords();
+        } else {
+            console.error("Loi gia han:", data);
+            showAlert(data.message || "Gia hạn thất bại", true);
+        }
+    } catch (err) {
+        console.error("Loi ket noi gia han:", err);
+        showAlert("Lỗi kết nối khi gửi yêu cầu gia hạn", true);
+    }
 }
 
 // Quan tri vien xac nhan nhan tra sach

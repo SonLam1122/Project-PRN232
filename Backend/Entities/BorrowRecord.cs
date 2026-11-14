@@ -42,6 +42,10 @@ namespace Project_PRN232.Entities
         [Range(0, 10000000.0, ErrorMessage = "Tien phat khong the am")]
         public decimal FineAmount { get; set; } = 0;
 
+        // So lan da gia han phieu muon (toi da 2 lan)
+        [Range(0, 5, ErrorMessage = "So lan gia han khong hop le")]
+        public int RenewalCount { get; set; } = 0;
+
         [StringLength(500, ErrorMessage = "Ghi chu toi da 500 ky tu")]
         public string? Notes { get; set; }
     }

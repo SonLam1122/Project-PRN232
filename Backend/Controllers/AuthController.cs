@@ -40,20 +40,23 @@ namespace Project_PRN232.Controllers
                 return BadRequest(ModelState);
             }
 
+            var cleanUsername = dto.Username.Trim().ToLower();
+            var cleanEmail = dto.Email.Trim().ToLower();
+
             // Kiem tra trung lap Username
-            var usernameExists = await _context.Users.AnyAsync(u => u.Username.ToLower() == dto.Username.ToLower());
+            var usernameExists = await _context.Users.AnyAsync(u => u.Username.ToLower() == cleanUsername);
             if (usernameExists)
             {
                 _logger.LogWarning("Dang ky that bai: Ten dang nhap {Username} da ton tai", dto.Username);
-                return BadRequest(new { Message = "Ten dang nhap da ton tai tren he thong." });
+                return BadRequest(new { Message = "Tên đăng nhập đã tồn tại trên hệ thống, vui lòng chọn tên khác." });
             }
 
             // Kiem tra trung lap Email
-            var emailExists = await _context.Users.AnyAsync(u => u.Email.ToLower() == dto.Email.ToLower());
+            var emailExists = await _context.Users.AnyAsync(u => u.Email.ToLower() == cleanEmail);
             if (emailExists)
             {
                 _logger.LogWarning("Dang ky that bai: Email {Email} da ton tai", dto.Email);
-                return BadRequest(new { Message = "Dia chi email da duoc su dung." });
+                return BadRequest(new { Message = "Địa chỉ email này đã được sử dụng, vui lòng chọn email khác." });
             }
 
             var newUser = new User

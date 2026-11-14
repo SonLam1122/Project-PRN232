@@ -24,6 +24,9 @@ namespace Project_PRN232.Entities
         [StringLength(1000, ErrorMessage = "Mo ta sach toi da 1000 ky tu")]
         public string? Description { get; set; }
 
+        [StringLength(500, ErrorMessage = "Duong dan hinh anh toi da 500 ky tu")]
+        public string? ImageUrl { get; set; }
+
         [Required(ErrorMessage = "Gia sach la bat buoc")]
         [Range(1000.0, 50000000.0, ErrorMessage = "Gia sach phai nam trong khoang tu 1,000 den 50,000,000")]
         [Column(TypeName = "decimal(18,2)")]

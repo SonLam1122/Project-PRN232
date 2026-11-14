@@ -45,6 +45,7 @@ namespace Project_PRN232.Controllers
 
         // GET: api/borrowrecords/my-history - Lay lich su muon sach cua chinh nguoi dung hien tai
         [HttpGet("my-history")]
+        [HttpGet("my-records")]
         [Authorize]
         public async Task<ActionResult<IEnumerable<BorrowRecordReadDto>>> GetMyHistory()
         {
@@ -92,6 +93,7 @@ namespace Project_PRN232.Controllers
         }
 
         // POST: api/borrowrecords/borrow - Dang ky muon mot dau sach
+        [HttpPost]
         [HttpPost("borrow")]
         [Authorize]
         public async Task<ActionResult<BorrowRecordReadDto>> BorrowBook([FromBody] BorrowCreateDto dto)
@@ -217,6 +219,59 @@ namespace Project_PRN232.Controllers
                 RecordId = record.Id,
                 ReturnDate = record.ReturnDate,
                 FineAmount = record.FineAmount
+            });
+        }
+
+        // PUT: api/borrowrecords/{id}/renew - Gia han phieu muon them 7 ngay (Toi da 2 lan gia han)
+        [HttpPut("{id:int}/renew")]
+        [Authorize]
+        public async Task<IActionResult> RenewBorrowRecord(int id)
+        {
+            var record = await _context.BorrowRecords
+                .Include(br => br.Book)
+                .FirstOrDefaultAsync(br => br.Id == id);
+
+            if (record == null)
+            {
+                return NotFound(new { Message = $"Khong tim thay phieu muon co ma #{id}." });
+            }
+
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var role = User.FindFirstValue(ClaimTypes.Role);
+            if (role != "Admin" && record.UserId.ToString() != userIdStr)
+            {
+                return Forbid();
+            }
+
+            if (record.Status == "Returned")
+            {
+                return BadRequest(new { Message = "Phieu muon da hoan tra, khong the gia han." });
+            }
+
+            // Khong cho phep gia han neu da qua han
+            if (DateTime.UtcNow.Date > record.DueDate.Date || record.Status == "Overdue")
+            {
+                return BadRequest(new { Message = "Phieu muon da qua han, vui long den quay thu vien lam thu tuc tra sach va nop phat." });
+            }
+
+            if (record.RenewalCount >= 2)
+            {
+                return BadRequest(new { Message = "Moi phieu muon chi duoc phep gia han toi da 2 lan." });
+            }
+
+            // Gia han them 7 ngay
+            record.DueDate = record.DueDate.AddDays(7);
+            record.RenewalCount += 1;
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Phieu muon #{RecordId} da duoc gia han lan thu {Count}, han moi: {DueDate}", record.Id, record.RenewalCount, record.DueDate);
+
+            return Ok(new
+            {
+                Message = $"Gia han thanh cong. Han tra moi: {record.DueDate:dd/MM/yyyy}.",
+                RecordId = record.Id,
+                NewDueDate = record.DueDate,
+                RenewalCount = record.RenewalCount
             });
         }
     }
